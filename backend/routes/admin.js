@@ -2,6 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const { pool } = require('../db');
 const { authenticate, adminOnly } = require('../middleware/auth');
+const { broadcastToAdmins, broadcastToUser, broadcastAll } = require('./events');
 
 const router = express.Router();
 
@@ -58,7 +59,16 @@ router.patch('/users/:id/toggle', async (req, res) => {
       'UPDATE users SET is_active = NOT is_active WHERE id=$1 RETURNING id, username, is_active',
       [req.params.id]
     );
-    res.json(result.rows[0]);
+    const updated = result.rows[0];
+    // Notify the affected user instantly
+    if (!updated.is_active) {
+      broadcastToUser(updated.id, 'account-suspended', { userId: updated.id });
+    } else {
+      broadcastToUser(updated.id, 'account-activated', { userId: updated.id });
+    }
+    // Update admin dashboards
+    broadcastToAdmins('user-status-changed', { userId: updated.id, is_active: updated.is_active, username: updated.username });
+    res.json(updated);
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
   }
@@ -79,10 +89,13 @@ router.patch('/users/:id/role', async (req, res) => {
 });
 
 router.delete('/users/:id', async (req, res) => {
-  if (parseInt(req.params.id) === req.user.id)
+  const targetId = parseInt(req.params.id);
+  if (targetId === req.user.id)
     return res.status(400).json({ error: 'Cannot delete your own account' });
   try {
-    await pool.query('DELETE FROM users WHERE id=$1', [req.params.id]);
+    broadcastToUser(targetId, 'account-deleted', { userId: targetId });
+    await pool.query('DELETE FROM users WHERE id=$1', [targetId]);
+    broadcastToAdmins('stats-update', { type: 'user-deleted', userId: targetId });
     res.json({ message: 'User deleted' });
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
@@ -109,8 +122,12 @@ router.get('/posts', async (req, res) => {
 });
 
 router.delete('/posts/:id', async (req, res) => {
+  const postId = parseInt(req.params.id);
   try {
-    await pool.query('DELETE FROM posts WHERE id=$1', [req.params.id]);
+    await pool.query('DELETE FROM posts WHERE id=$1', [postId]);
+    // Notify all connected clients to remove this post from their feed
+    broadcastAll('post-deleted', { postId });
+    broadcastToAdmins('stats-update', { type: 'post-deleted', postId });
     res.json({ message: 'Post deleted' });
   } catch (err) {
     res.status(500).json({ error: 'Server error' });

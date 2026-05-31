@@ -8,6 +8,7 @@ const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const postRoutes = require('./routes/posts');
 const adminRoutes = require('./routes/admin');
+const { router: eventsRouter } = require('./routes/events');
 
 const app = express();
 
@@ -22,6 +23,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/events', eventsRouter);
 
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, '../frontend/index.html')));
 app.get('/feed', (req, res) => res.sendFile(path.join(__dirname, '../frontend/feed.html')));

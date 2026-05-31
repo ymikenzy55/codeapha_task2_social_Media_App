@@ -11,7 +11,75 @@ let userSearchQuery = '';
   await initSidebar();
   loadStats();
   loadDashboardUsers();
+  connectAdminSSE();
 })();
+
+function connectAdminSSE() {
+  const token = getToken();
+  if (!token) return;
+
+  const es = new EventSource(`/api/events/stream?token=${encodeURIComponent(token)}`);
+
+  es.addEventListener('new-user', (e) => {
+    try {
+      const data = JSON.parse(e.data);
+      showToast(`New user registered: @${data.username}`, 'success');
+    } catch {}
+    loadStats();
+    // Refresh users table if currently visible
+    if (document.getElementById('usersView')?.style.display !== 'none') {
+      loadUsers(usersPage, userSearchQuery);
+    }
+    loadDashboardUsers();
+  });
+
+  es.addEventListener('new-post', (e) => {
+    try {
+      const data = JSON.parse(e.data);
+      showToast(`New post by @${data.username}`, 'default');
+    } catch {}
+    loadStats();
+    if (document.getElementById('postsView')?.style.display !== 'none') {
+      loadAdminPosts(postsPage);
+    }
+  });
+
+  es.addEventListener('stats-update', () => {
+    loadStats();
+    if (document.getElementById('usersView')?.style.display !== 'none') {
+      loadUsers(usersPage, userSearchQuery);
+    }
+    if (document.getElementById('postsView')?.style.display !== 'none') {
+      loadAdminPosts(postsPage);
+    }
+    loadDashboardUsers();
+  });
+
+  es.addEventListener('user-status-changed', (e) => {
+    try {
+      const data = JSON.parse(e.data);
+      // Update row in-place if visible without full reload
+      const rows = document.querySelectorAll('#usersTable tr, #dashboardUsersTable tr');
+      rows.forEach(row => {
+        const userCell = row.querySelector('.user-name');
+        if (userCell?.textContent === `@${data.username}`) {
+          const badge = row.querySelector('.badge-active, .badge-suspended');
+          if (badge) {
+            badge.className = `badge badge-${data.is_active ? 'active' : 'suspended'}`;
+            badge.textContent = data.is_active ? 'Active' : 'Suspended';
+          }
+          const toggleBtn = row.querySelector('button[title="Suspend"], button[title="Activate"]');
+          if (toggleBtn) toggleBtn.textContent = data.is_active ? '🚫' : '✅';
+        }
+      });
+    } catch {}
+  });
+
+  es.onerror = () => {
+    es.close();
+    setTimeout(connectAdminSSE, 5000);
+  };
+}
 
 async function loadStats() {
   try {

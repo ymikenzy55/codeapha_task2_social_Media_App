@@ -2,6 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { pool } = require('../db');
+const { broadcastToAdmins } = require('./events');
 require('dotenv').config();
 
 const router = express.Router();
@@ -26,6 +27,8 @@ router.post('/register', async (req, res) => {
     );
     const user = result.rows[0];
     const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
+    // Notify admins of new registration instantly
+    broadcastToAdmins('new-user', { userId: user.id, username: user.username, created_at: user.created_at });
     res.status(201).json({ token, user });
   } catch (err) {
     console.error(err);

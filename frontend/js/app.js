@@ -114,6 +114,7 @@ function renderAvatar(src, username, size = 36, extraClass = '') {
 async function initSidebar() {
   const user = getUser();
   if (!user) return;
+  connectSSE();
 
   document.getElementById('sidebarUsername').textContent = user.username;
   document.getElementById('sidebarRole').textContent = user.role === 'admin' ? 'Administrator' : 'Member';
@@ -202,3 +203,40 @@ document.addEventListener('click', (e) => {
 });
 
 initTheme();
+
+/* ===== SSE REAL-TIME CONNECTION ===== */
+let _sseSource = null;
+
+function connectSSE() {
+  const token = getToken();
+  if (!token || _sseSource) return;
+
+  _sseSource = new EventSource(`/api/events/stream?token=${encodeURIComponent(token)}`);
+
+  _sseSource.addEventListener('account-suspended', () => {
+    showToast('Your account has been suspended by an admin.', 'error');
+    setTimeout(logout, 2500);
+  });
+
+  _sseSource.addEventListener('account-deleted', () => {
+    showToast('Your account has been removed by an admin.', 'error');
+    setTimeout(logout, 2500);
+  });
+
+  _sseSource.addEventListener('account-activated', () => {
+    showToast('Your account has been reactivated!', 'success');
+  });
+
+  _sseSource.addEventListener('post-deleted', (e) => {
+    try {
+      const { postId } = JSON.parse(e.data);
+      document.getElementById(`post-${postId}`)?.remove();
+    } catch {}
+  });
+
+  _sseSource.onerror = () => {
+    _sseSource.close();
+    _sseSource = null;
+    setTimeout(connectSSE, 5000);
+  };
+}

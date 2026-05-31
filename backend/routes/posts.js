@@ -3,6 +3,7 @@ const multer = require('multer');
 const path = require('path');
 const { pool } = require('../db');
 const { authenticate } = require('../middleware/auth');
+const { broadcastToAdmins } = require('./events');
 
 const router = express.Router();
 
@@ -91,7 +92,10 @@ router.post('/', authenticate, upload.single('media'), async (req, res) => {
     );
     const post = result.rows[0];
     const userResult = await pool.query('SELECT username, avatar FROM users WHERE id=$1', [req.user.id]);
-    res.status(201).json({ ...post, ...userResult.rows[0], liked: false });
+    const fullPost = { ...post, ...userResult.rows[0], liked: false };
+    // Notify admin dashboards of new post instantly
+    broadcastToAdmins('new-post', { postId: post.id, username: userResult.rows[0].username, content: post.content?.slice(0, 60) });
+    res.status(201).json(fullPost);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
