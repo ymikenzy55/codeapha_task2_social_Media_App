@@ -307,6 +307,8 @@ async function saveProfile() {
 
   const errEl = document.getElementById('editProfileError');
   errEl.style.display = 'none';
+  const saveBtn = document.querySelector('#editProfileModal .btn-primary');
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Saving...'; }
 
   try {
     const res = await apiFetch('/api/users/me', { method: 'PUT', body: formData });
@@ -317,6 +319,13 @@ async function saveProfile() {
     const updated = await res.json();
     const stored = getUser();
     localStorage.setItem('user', JSON.stringify({ ...stored, ...updated }));
+
+    // Instantly update visible profile avatar without waiting for loadProfile
+    if (updated.avatar) {
+      const profileAvatarEl = document.getElementById('profileAvatar');
+      if (profileAvatarEl) { profileAvatarEl.src = `${updated.avatar}?t=${Date.now()}`; profileAvatarEl.style.display = 'block'; }
+    }
+
     closeModal('editProfileModal');
     showToast('Profile updated!', 'success');
     loadProfile();
@@ -324,6 +333,8 @@ async function saveProfile() {
   } catch (err) {
     errEl.textContent = err.message;
     errEl.style.display = 'block';
+  } finally {
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Save Changes'; }
   }
 }
 

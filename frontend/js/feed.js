@@ -298,13 +298,22 @@ async function deletePost(postId) {
 }
 
 async function toggleFollow(userId, btn) {
+  btn.disabled = true;
   try {
     const res = await apiFetch(`/api/users/${userId}/follow`, { method: 'POST' });
     if (!res?.ok) return;
     const data = await res.json();
     btn.textContent = data.following ? 'Unfollow' : 'Follow';
+    btn.className = `btn ${data.following ? 'btn-ghost' : 'btn-outline'} btn-sm`;
     showToast(data.following ? 'Following!' : 'Unfollowed', 'success');
-  } catch {}
+    // Reload feed so newly followed user's posts appear
+    if (data.following) {
+      feedPage = 1;
+      loadFeed(false);
+    }
+  } catch {} finally {
+    btn.disabled = false;
+  }
 }
 
 function openCreatePost() { openModal('createPostModal'); }
@@ -355,6 +364,9 @@ async function createPost() {
   if (content) formData.append('content', content);
   if (mediaInput.files[0]) formData.append('media', mediaInput.files[0]);
 
+  const postBtn = document.querySelector('#createPostModal .btn-primary');
+  if (postBtn) { postBtn.disabled = true; postBtn.textContent = 'Posting...'; }
+
   try {
     const res = await apiFetch('/api/posts', { method: 'POST', body: formData });
     if (!res?.ok) {
@@ -370,6 +382,8 @@ async function createPost() {
   } catch (err) {
     errEl.textContent = err.message || 'Failed to create post';
     errEl.style.display = 'block';
+  } finally {
+    if (postBtn) { postBtn.disabled = false; postBtn.textContent = 'Post'; }
   }
 }
 
@@ -380,6 +394,9 @@ async function quickPost() {
   if (!content && !mediaInput.files[0]) {
     showToast('Please add some text or media', 'error'); return;
   }
+
+  const shareBtn = document.querySelector('#inlinCreatePost .btn-primary');
+  if (shareBtn) { shareBtn.disabled = true; shareBtn.textContent = 'Posting...'; }
 
   const formData = new FormData();
   if (content) formData.append('content', content);
@@ -395,6 +412,8 @@ async function quickPost() {
     showToast('Post created!', 'success');
   } catch {
     showToast('Failed to create post', 'error');
+  } finally {
+    if (shareBtn) { shareBtn.disabled = false; shareBtn.textContent = 'Share'; }
   }
 }
 
@@ -415,6 +434,8 @@ async function saveProfile() {
 
   const errEl = document.getElementById('editProfileError');
   errEl.style.display = 'none';
+  const saveBtn = document.querySelector('#editProfileModal .btn-primary');
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Saving...'; }
 
   try {
     const res = await apiFetch('/api/users/me', { method: 'PUT', body: formData });
@@ -424,13 +445,26 @@ async function saveProfile() {
     }
     const updated = await res.json();
     const stored = getUser();
-    localStorage.setItem('user', JSON.stringify({ ...stored, ...updated }));
+    const merged = { ...stored, ...updated };
+    localStorage.setItem('user', JSON.stringify(merged));
+
+    // Immediately update all avatar instances on the page
+    if (updated.avatar) {
+      const ts = `?t=${Date.now()}`;
+      ['createPostAvatar', 'modalPostAvatar'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) { el.src = updated.avatar + ts; el.style.display = 'block'; }
+      });
+    }
+
     closeModal('editProfileModal');
     showToast('Profile updated!', 'success');
     await initSidebar();
   } catch (err) {
     errEl.textContent = err.message;
     errEl.style.display = 'block';
+  } finally {
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Save Changes'; }
   }
 }
 

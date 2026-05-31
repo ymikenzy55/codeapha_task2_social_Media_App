@@ -143,9 +143,17 @@ async function initSidebar() {
       const fresh = await res.json();
       localStorage.setItem('user', JSON.stringify({ ...user, ...fresh }));
       if (fresh.avatar) {
-        avatarEl.src = fresh.avatar;
+        avatarEl.src = `${fresh.avatar}?t=${Date.now()}`;
         avatarEl.style.display = 'block';
         fallbackEl.style.display = 'none';
+        // Update any other avatar elements on the current page
+        ['createPostAvatar', 'modalPostAvatar'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) { el.src = `${fresh.avatar}?t=${Date.now()}`; el.style.display = 'block'; }
+        });
+      }
+      if (fresh.username) {
+        document.getElementById('sidebarUsername').textContent = fresh.username;
       }
     }
   } catch {}
