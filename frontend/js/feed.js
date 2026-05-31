@@ -6,8 +6,22 @@ let feedLoading = false;
 let currentView = 'feed';
 let selectedMediaFile = null;
 
+const isGuest = !getToken() && (new URLSearchParams(location.search).get('guest') === '1' || !getToken());
+
 (async function init() {
-  if (!getToken()) { window.location.href = '/'; return; }
+  if (!getToken()) {
+    // Guest mode — allow browse-only access
+    initGuestSidebar();
+    switchView('explore');
+    const banner = document.getElementById('guestBanner');
+    if (banner) banner.style.display = 'block';
+    loadExplore();
+    setupInfiniteScroll();
+    // Hide create-post UI
+    const createCard = document.getElementById('inlinCreatePost');
+    if (createCard) createCard.style.display = 'none';
+    return;
+  }
   await initSidebar();
   loadFeed();
   loadSuggestedUsers();
@@ -21,6 +35,36 @@ let selectedMediaFile = null;
     modalAvatar.src = user.avatar;
   }
 })();
+
+function initGuestSidebar() {
+  const usernameEl = document.getElementById('sidebarUsername');
+  const roleEl = document.getElementById('sidebarRole');
+  const avatarEl = document.getElementById('sidebarAvatar');
+  const fallbackEl = document.getElementById('sidebarAvatarFallback');
+  if (usernameEl) usernameEl.textContent = 'Guest';
+  if (roleEl) roleEl.textContent = 'Browsing';
+  if (avatarEl) avatarEl.style.display = 'none';
+  if (fallbackEl) { fallbackEl.style.display = 'flex'; fallbackEl.textContent = '?'; }
+
+  // Replace sidebar bottom actions with sign in/up buttons
+  const logoutBtn = document.querySelector('.sidebar-footer');
+  if (logoutBtn) {
+    logoutBtn.innerHTML = `
+      <a href="/" class="btn btn-primary btn-full" style="margin-bottom:8px">Sign In</a>
+      <a href="/?tab=register" class="btn btn-ghost btn-full" style="border:1.5px solid var(--border)">Create Account</a>`;
+  }
+
+  // Hide nav links that require auth
+  const profileLink = document.getElementById('profileNavLink');
+  if (profileLink) profileLink.style.display = 'none';
+  const adminLink = document.getElementById('adminNavLink');
+  if (adminLink) adminLink.style.display = 'none';
+}
+
+function requireAuth() {
+  openModal('guestModal');
+  return true;
+}
 
 function switchView(view) {
   currentView = view;
@@ -174,11 +218,11 @@ function renderPost(post) {
       ${post.content ? `<div class="post-content">${escapeHtml(post.content)}</div>` : ''}
       ${mediaHtml}
       <div class="post-actions">
-        <button class="action-btn ${post.liked ? 'liked' : ''}" onclick="toggleLike(${post.id}, this)" id="likeBtn${post.id}">
+        <button class="action-btn ${post.liked ? 'liked' : ''}" onclick="${isGuest ? 'requireAuth()' : `toggleLike(${post.id}, this)`}" id="likeBtn${post.id}">
           <svg width="18" height="18" fill="${post.liked ? 'var(--primary)' : 'none'}" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
           <span id="likeCount${post.id}">${post.likes_count}</span>
         </button>
-        <button class="action-btn" onclick="toggleComments(${post.id})">
+        <button class="action-btn" onclick="${isGuest ? 'requireAuth()' : `toggleComments(${post.id})`}">
           <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
           <span>${post.comments_count}</span>
         </button>
@@ -316,7 +360,10 @@ async function toggleFollow(userId, btn) {
   }
 }
 
-function openCreatePost() { openModal('createPostModal'); }
+function openCreatePost() {
+  if (isGuest) { requireAuth(); return; }
+  openModal('createPostModal');
+}
 
 function previewMedia(input, previewId) {
   const file = input.files[0];
@@ -388,6 +435,7 @@ async function createPost() {
 }
 
 async function quickPost() {
+  if (isGuest) { requireAuth(); return; }
   const content = document.getElementById('quickPostContent').value.trim();
   const mediaInput = document.getElementById('quickPostMedia');
 

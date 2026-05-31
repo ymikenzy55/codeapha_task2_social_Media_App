@@ -2,7 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const { pool } = require('../db');
-const { authenticate } = require('../middleware/auth');
+const { authenticate, optionalAuth } = require('../middleware/auth');
 const { broadcastToAdmins } = require('./events');
 
 const router = express.Router();
@@ -50,21 +50,33 @@ router.get('/feed', authenticate, async (req, res) => {
   }
 });
 
-router.get('/explore', authenticate, async (req, res) => {
+router.get('/explore', optionalAuth, async (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = 12;
   const offset = (page - 1) * limit;
 
   try {
-    const result = await pool.query(
-      `SELECT p.*, u.username, u.avatar,
-        EXISTS(SELECT 1 FROM likes WHERE post_id=p.id AND user_id=$1) AS liked
-       FROM posts p JOIN users u ON u.id = p.user_id
-       WHERE u.is_active=true
-       ORDER BY p.likes_count DESC, p.created_at DESC
-       LIMIT $2 OFFSET $3`,
-      [req.user.id, limit, offset]
-    );
+    let result;
+    if (req.user) {
+      result = await pool.query(
+        `SELECT p.*, u.username, u.avatar,
+          EXISTS(SELECT 1 FROM likes WHERE post_id=p.id AND user_id=$1) AS liked
+         FROM posts p JOIN users u ON u.id = p.user_id
+         WHERE u.is_active=true
+         ORDER BY p.likes_count DESC, p.created_at DESC
+         LIMIT $2 OFFSET $3`,
+        [req.user.id, limit, offset]
+      );
+    } else {
+      result = await pool.query(
+        `SELECT p.*, u.username, u.avatar, false AS liked
+         FROM posts p JOIN users u ON u.id = p.user_id
+         WHERE u.is_active=true
+         ORDER BY p.likes_count DESC, p.created_at DESC
+         LIMIT $1 OFFSET $2`,
+        [limit, offset]
+      );
+    }
     res.json(result.rows);
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
