@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vibe — Feed</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+  <div class="app-layout">
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-logo">
+        <div class="logo-icon">🔥</div>
+        <h2><span>Vibe</span>Connect</h2>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section-title">Main</div>
+        <a class="nav-link active" href="/feed">
+          <span class="nav-icon">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          </span>
+          Feed
+        </a>
+        <a class="nav-link" href="#" onclick="switchView('explore')">
+          <span class="nav-icon">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          </span>
+          Explore
+        </a>
+        <a class="nav-link" href="#" onclick="openCreatePost()">
+          <span class="nav-icon">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+          </span>
+          New Post
+        </a>
+
+        <div class="nav-section-title" style="margin-top:8px">Profile</div>
+        <a class="nav-link" id="profileNavLink" href="#">
+          <span class="nav-icon">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </span>
+          My Profile
+        </a>
+
+        <div class="nav-section-title" style="margin-top:8px">Settings</div>
+        <a class="nav-link" href="#" onclick="openEditProfile()">
+          <span class="nav-icon">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+          </span>
+          Edit Profile
+        </a>
+        <a class="nav-link" id="adminNavLink" href="/admin" style="display:none">
+          <span class="nav-icon">🛡️</span>
+          Admin Panel
+        </a>
+        <a class="nav-link" href="#" onclick="logout()">
+          <span class="nav-icon">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          </span>
+          Log Out
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-user" id="sidebarUser" onclick="goToMyProfile()">
+          <img class="user-avatar" id="sidebarAvatar" src="" alt="avatar" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" />
+          <div class="user-avatar avatar-fallback" id="sidebarAvatarFallback" style="display:none;width:36px;height:36px;border-radius:50%;font-size:14px;border:2px solid var(--primary)"></div>
+          <div class="user-info">
+            <div class="user-name" id="sidebarUsername">Loading...</div>
+            <div class="user-role" id="sidebarRole">Member</div>
+          </div>
+        </div>
+        <button class="theme-toggle" onclick="toggleTheme()">
+          <span id="themeIcon">☀️</span>
+          <span id="themeLabel">Light Mode</span>
+          <div class="toggle-switch"></div>
+        </button>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+      <header class="topbar">
+        <button class="menu-btn" onclick="toggleSidebar()">☰</button>
+        <h1 id="pageTitle">Feed</h1>
+        <div class="search-bar" style="position:relative">
+          <span class="search-icon">
+            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          </span>
+          <input type="text" placeholder="Search users..." id="searchInput" autocomplete="off" oninput="handleSearch(this.value)" />
+          <div class="search-results" id="searchResults"></div>
+        </div>
+        <div class="topbar-actions">
+          <button class="btn btn-primary btn-sm" onclick="openCreatePost()">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Post
+          </button>
+        </div>
+      </header>
+
+      <div class="content-area">
+        <!-- FEED VIEW -->
+        <div id="feedView">
+          <div class="feed-layout">
+            <div class="feed-main">
+              <!-- Create Post Card -->
+              <div class="create-post-card" id="inlinCreatePost">
+                <div class="create-post-header">
+                  <img class="avatar" id="createPostAvatar" src="" alt="avatar" onerror="handleAvatarError(this)" />
+                  <textarea id="quickPostContent" placeholder="What's on your mind?" rows="2"></textarea>
+                </div>
+                <div id="mediaPreviewInline" class="media-preview" style="display:none"></div>
+                <div class="create-post-actions">
+                  <label class="btn btn-ghost btn-sm" style="cursor:pointer">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                    Photo/Video
+                    <input type="file" id="quickPostMedia" accept="image/*,video/*" style="display:none" onchange="previewMedia(this, 'mediaPreviewInline')" />
+                  </label>
+                  <button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="quickPost()">Share</button>
+                </div>
+              </div>
+
+              <div id="feedPosts"></div>
+              <div id="feedLoader" class="loader"><div class="spinner"></div></div>
+            </div>
+
+            <aside class="feed-sidebar">
+              <div class="widget-card">
+                <div class="widget-title">
+                  <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+                  Suggested Users
+                </div>
+                <div id="suggestedUsers">
+                  <div class="loader"><div class="spinner"></div></div>
+                </div>
+              </div>
+            </aside>
+          </div>
+        </div>
+
+        <!-- EXPLORE VIEW -->
+        <div id="exploreView" style="display:none">
+          <div class="tabs">
+            <button class="tab-btn active">Trending</button>
+          </div>
+          <div class="explore-grid" id="exploreGrid"></div>
+          <div id="exploreLoader" class="loader" style="display:none"><div class="spinner"></div></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- CREATE POST MODAL -->
+  <div class="modal-overlay" id="createPostModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Create Post</h3>
+        <button class="modal-close" onclick="closeModal('createPostModal')">✕</button>
+      </div>
+      <div style="display:flex;gap:12px;margin-bottom:12px">
+        <img class="avatar-fallback" id="modalPostAvatar" style="width:42px;height:42px;border-radius:50%;object-fit:cover;flex-shrink:0" src="" alt="" onerror="handleAvatarError(this)" />
+        <textarea class="form-group" id="postContent" placeholder="What's on your mind?" style="flex:1;padding:12px;background:var(--bg-secondary);border:1.5px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;resize:none;height:100px;font-family:inherit;width:100%"></textarea>
+      </div>
+      <div id="mediaPreview" class="media-preview" style="display:none"></div>
+      <div style="display:flex;gap:10px;margin-top:12px">
+        <label class="btn btn-ghost btn-sm" style="cursor:pointer">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          Add Photo/Video
+          <input type="file" id="postMedia" accept="image/*,video/*" style="display:none" onchange="previewMedia(this, 'mediaPreview')" />
+        </label>
+        <button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="createPost()">Post</button>
+      </div>
+      <div id="postError" class="form-error" style="display:none;margin-top:12px"></div>
+    </div>
+  </div>
+
+  <!-- EDIT PROFILE MODAL -->
+  <div class="modal-overlay" id="editProfileModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Edit Profile</h3>
+        <button class="modal-close" onclick="closeModal('editProfileModal')">✕</button>
+      </div>
+      <div class="form-group">
+        <label>Username</label>
+        <input type="text" id="editUsername" placeholder="Username" />
+      </div>
+      <div class="form-group">
+        <label>Bio</label>
+        <textarea id="editBio" placeholder="Tell something about yourself..." style="background:var(--bg-secondary);border:1.5px solid var(--border);border-radius:8px;padding:12px;color:var(--text);font-size:14px;resize:none;height:80px;width:100%;font-family:inherit"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Profile Picture</label>
+        <input type="file" id="editAvatar" accept="image/*" />
+      </div>
+      <div id="editProfileError" class="form-error" style="display:none;margin-top:12px"></div>
+      <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end">
+        <button class="btn btn-ghost" onclick="closeModal('editProfileModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="saveProfile()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="js/app.js"></script>
+  <script src="js/feed.js"></script>
+</body>
+</html>
