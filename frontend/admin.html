@@ -5,6 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Vibe — Admin Panel</title>
   <link rel="stylesheet" href="css/style.css" />
+  <script>
+    function handleAvatarError(el) {
+      el.style.display = 'none';
+      var fb = el.nextElementSibling;
+      if (fb && fb.classList && fb.classList.contains('avatar-fallback')) {
+        fb.style.display = 'flex';
+        if (!fb.textContent.trim()) fb.textContent = '?';
+      }
+    }
+    (function() {
+      var t = localStorage.getItem('theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
 </head>
 <body>
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>

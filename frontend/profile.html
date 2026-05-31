@@ -5,6 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Vibe — Profile</title>
   <link rel="stylesheet" href="css/style.css" />
+  <script>
+    function handleAvatarError(el) {
+      el.style.display = 'none';
+      var fb = el.nextElementSibling;
+      if (fb && fb.classList && fb.classList.contains('avatar-fallback')) {
+        fb.style.display = 'flex';
+        if (!fb.textContent.trim()) fb.textContent = '?';
+      }
+    }
+    (function() {
+      var t = localStorage.getItem('theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
 </head>
 <body>
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
@@ -92,7 +106,7 @@
             <div class="profile-info">
               <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
                 <div class="profile-avatar-wrapper">
-                  <img class="profile-avatar" id="profileAvatar" src="" alt="avatar" onerror="handleAvatarError(this)" />
+                  <img class="profile-avatar" id="profileAvatar" alt="avatar" onerror="handleAvatarError(this)" />
                 </div>
                 <div class="profile-actions" id="profileActions"></div>
               </div>
